@@ -1,14 +1,18 @@
 package com.example.happyplaces
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.app.DatePickerDialog
+import android.app.UiAutomation.OnAccessibilityEventListener
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.MediaStore
 import android.provider.Settings
 import android.view.View
+import android.widget.Gallery
 import android.widget.Toast
 import com.example.happyplaces.databinding.ActivityAddHappyPlaceBinding
 import com.example.happyplaces.databinding.ActivityMainBinding
@@ -17,12 +21,16 @@ import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.sql.RowSetListener
 
 class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
     private var binding: ActivityAddHappyPlaceBinding? = null
+    companion object{
+        private const val GALLERY=1
+    }
 
     private var cal = Calendar.getInstance()
     private lateinit var dateSetListener: DatePickerDialog.OnDateSetListener
@@ -83,6 +91,24 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
+    public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (resultCode== Activity.RESULT_OK){
+            if (requestCode== GALLERY){
+                if (data!=null){
+                    val contentURI=data.data
+                    try {
+                        val selectedImageBitmap=MediaStore.Images.Media.getBitmap(this.contentResolver,contentURI)
+                        binding?.ivPlaceImage?.setImageBitmap(selectedImageBitmap)
+                    }catch (e:IOException){
+                        e.printStackTrace()
+                        Toast.makeText(this@AddHappyPlaceActivity,"failed to load bitmap image from the gallery",Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+    }
     private fun choosePhotoFromGallery() {
 
         Dexter.withActivity(this).withPermissions(
@@ -91,11 +117,8 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
         ).withListener(object : MultiplePermissionsListener {
             override fun onPermissionsChecked(report: MultiplePermissionsReport?) {
                 if (report!!.areAllPermissionsGranted()) {
-                    Toast.makeText(
-                        this@AddHappyPlaceActivity,
-                        "Storage READ/WRITE permission granted",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    val galleryIntent=Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                    startActivityForResult(galleryIntent,GALLERY)
                 }
             }
 
@@ -131,4 +154,5 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
         val sdf = SimpleDateFormat(myFormat, Locale.getDefault())
         binding?.etDate?.setText(sdf.format(cal.time).toString())
     }
+
 }
