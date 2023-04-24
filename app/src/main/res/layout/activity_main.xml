@@ -14,4 +14,21 @@
         android:layout_gravity="bottom|end"
         android:src="@drawable/ic_action_add_24dp"/>
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/rv_happy_places_list"
+        android:visibility="gone"
+        tools:visibility="visible"/>
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:id="@+id/tv_no_records"
+        android:text="No Happy Places found yet."
+        android:textSize="16sp"
+        android:visibility="visible"
+        tools:visibility="visible"
+        />
+
 </FrameLayout>
