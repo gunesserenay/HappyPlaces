@@ -16,7 +16,8 @@
         tools:targetApi="31">
         <activity
             android:name=".activities.AddHappyPlaceActivity"
-            android:exported="false"
+            android:exported="true"
+            android:permission=""
             android:screenOrientation="portrait"
             android:label="Add Happy Place"
             android:theme="@style/CustomNoActionBarTheme"/>

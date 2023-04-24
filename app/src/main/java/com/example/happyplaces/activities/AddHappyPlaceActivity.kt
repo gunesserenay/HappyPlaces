@@ -16,7 +16,9 @@ import android.provider.Settings
 import android.view.View
 import android.widget.Toast
 import com.example.happyplaces.R
+import com.example.happyplaces.database.DatabaseHandler
 import com.example.happyplaces.databinding.ActivityAddHappyPlaceBinding
+import com.example.happyplaces.models.HappyPlaceModel
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
@@ -26,6 +28,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
+import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -40,6 +43,9 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
 
     private var cal = Calendar.getInstance()
     private lateinit var dateSetListener: DatePickerDialog.OnDateSetListener
+    private var saveImageToInternalStorage: Uri? = null
+    private var mLatitude: Double = 0.0
+    private var mLongitude: Double = 0.0
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAddHappyPlaceBinding.inflate(layoutInflater)
@@ -58,8 +64,10 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
             cal.set(Calendar.DAY_OF_MONTH, dayOfMonth)
             updateDateInView()
         }
+        updateDateInView()
         binding?.etDate?.setOnClickListener(this)
         binding?.tvAddImage?.setOnClickListener(this)
+        binding?.btnSave?.setOnClickListener(this)
     }
 
     override fun onDestroy() {
@@ -81,7 +89,7 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
                 val pictureDialog = AlertDialog.Builder(this)
                 pictureDialog.setTitle("Select Action")
                 val pictureDiaologItems =
-                    arrayOf("Select from gallery", "Capture photo from gallery")
+                    arrayOf("Select from gallery", "Capture photo from camera")
                 pictureDialog.setItems(pictureDiaologItems) { diaolog, which ->
                     when (which) {
                         0 -> choosePhotoFromGallery()
@@ -89,6 +97,40 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
                     }
                 }
                 pictureDialog.show()
+            }
+            R.id.btn_save -> {
+                when {
+                    binding?.etTitle?.text.isNullOrEmpty() -> {
+                        Toast.makeText(this, "Fill in the blank", Toast.LENGTH_SHORT).show()
+                    }
+                    binding?.etDescription?.text.isNullOrEmpty() -> {
+                        Toast.makeText(this, "Fill in the blank", Toast.LENGTH_SHORT).show()
+                    }
+                    binding?.etLocation?.text.isNullOrEmpty() -> {
+                        Toast.makeText(this, "Fill in the blank", Toast.LENGTH_SHORT).show()
+                    }
+                    saveImageToInternalStorage == null -> {
+                        Toast.makeText(this, "Fill in the blank", Toast.LENGTH_SHORT).show()
+                    }
+                    else -> {
+                        val happyPlaceModel = HappyPlaceModel(
+                            id = 0,
+                            binding?.etTitle?.text.toString(),
+                            saveImageToInternalStorage.toString(),
+                            binding?.etDescription?.text.toString(),
+                            binding?.etDate?.text.toString(),
+                            binding?.etLocation?.text.toString(),
+                            mLatitude,
+                            mLongitude
+                        )
+                        val dbHandler=DatabaseHandler(this)
+                        val addHappyPlace=dbHandler.addHappyPlace(happyPlaceModel)
+                        if ( addHappyPlace>0){
+                            Toast.makeText(this, "Inserted successfully", Toast.LENGTH_SHORT).show()
+                            finish()
+                        }
+                    }
+                }
             }
         }
     }
@@ -103,7 +145,7 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
                     try {
                         val selectedImageBitmap =
                             MediaStore.Images.Media.getBitmap(this.contentResolver, contentURI)
-                        saveImageToInternalStorage(selectedImageBitmap)
+                        saveImageToInternalStorage = saveImageToInternalStorage(selectedImageBitmap)
                         binding?.ivPlaceImage?.setImageBitmap(selectedImageBitmap)
                     } catch (e: IOException) {
                         e.printStackTrace()
@@ -116,7 +158,7 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
                 }
             } else if (requestCode == CAMERA) {
                 val thumbnail: Bitmap = data!!.extras!!.get("data") as Bitmap
-                saveImageToInternalStorage(thumbnail)
+                saveImageToInternalStorage = saveImageToInternalStorage(thumbnail)
                 binding?.ivPlaceImage?.setImageBitmap(thumbnail)
 
             }
@@ -186,21 +228,22 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener {
             .show()
     }
 
-    private fun saveImageToInternalStorage(bitmap:Bitmap):Uri{
-        val wrapper=ContextWrapper(applicationContext)
-        var file=wrapper.getDir(IMAGE_DIRECTORY,Context.MODE_PRIVATE)
-        file=File(file,"${UUID.randomUUID()}.jpg")
+    private fun saveImageToInternalStorage(bitmap: Bitmap): Uri {
+        val wrapper = ContextWrapper(applicationContext)
+        var file = wrapper.getDir(IMAGE_DIRECTORY, Context.MODE_PRIVATE)
+        file = File(file, "${UUID.randomUUID()}.jpg")
 
         try {
-            val stream:OutputStream= FileOutputStream(file)
-            bitmap.compress(Bitmap.CompressFormat.JPEG,100,stream)
+            val stream: OutputStream = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
             stream.flush()
             stream.close()
-        }catch (e:IOException){
+        } catch (e: IOException) {
             e.printStackTrace()
         }
         return Uri.parse(file.absolutePath)
     }
+
     private fun updateDateInView() {
         val myFormat = "dd.MM.yyyy"
         val sdf = SimpleDateFormat(myFormat, Locale.getDefault())
