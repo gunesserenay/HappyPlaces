@@ -10,4 +10,6 @@
     <color name="primary">#2a4d69</color>
     <color name="primary_middle">#4b86b4</color>
     <color name="primary_light">#adcbe3</color>
+
+    <color name="detail_screen_description_text_color">#757575</color>
 </resources>
