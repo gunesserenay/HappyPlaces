@@ -18,6 +18,7 @@
         <activity
             android:name=".activities.HappyPlaceDetailActivity"
             android:label="Happy Place Details"
+            android:theme="@style/CustomNoActionBarTheme"
             android:exported="false" />
         <activity
             android:name=".activities.AddHappyPlaceActivity"

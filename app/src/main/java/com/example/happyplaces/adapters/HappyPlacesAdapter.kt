@@ -14,6 +14,8 @@ open class HappyPlacesAdapter (
     private val context:Context,
     private val list:ArrayList<HappyPlaceModel>
         ):RecyclerView.Adapter<RecyclerView.ViewHolder>(){
+
+    private var onClickListener:OnClickListener?=null
     class ViewHolder(binding: ItemHappyPlaceBinding):RecyclerView.ViewHolder(binding.root){
 
         val ivPlaceImg=binding.ivPlaceImage
@@ -35,7 +37,19 @@ open class HappyPlacesAdapter (
             holder.ivPlaceImg.setImageURI(Uri.parse(model.image))
             holder.tvTitle.text=model.title
             holder.tvDescription.text=model.description
+            holder.itemView.setOnClickListener{
+                if (onClickListener!=null){
+                    onClickListener!!.onClick(position,model)
+                }
+            }
         }
+    }
+    fun setOnClickListener(onClickListener: OnClickListener){
+        this.onClickListener=onClickListener
+    }
+
+    interface OnClickListener{
+        fun onClick(position: Int,model: HappyPlaceModel)
     }
 
 }
